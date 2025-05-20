@@ -73,15 +73,41 @@
         }
         .radio-label {
             display: flex;
-            align-items: center; /* Modificado para alinear verticalmente */
+            align-items: center;
             cursor: pointer;
             position: relative;
             margin: 0 5px;
         }
         .radio-label input[type="radio"] {
-            margin-right: 4px; /* Espacio reducido */
-            opacity: 1; /* Hacemos visible el radio button */
+            margin-right: 4px;
+            opacity: 1;
+            position: relative;
+            z-index: 2;
         }
+        /* Estilo para los bullets de la escala con gradiente de azul a naranja */
+        .radio-label:before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -3px;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            z-index: 1;
+        }
+        /* Colores gradientes para las escalas */
+        .scale-inputs .radio-label:nth-child(1):before { background-color: #1e88e5; }
+        .scale-inputs .radio-label:nth-child(2):before { background-color: #2196f3; }
+        .scale-inputs .radio-label:nth-child(3):before { background-color: #42a5f5; }
+        .scale-inputs .radio-label:nth-child(4):before { background-color: #64b5f6; }
+        .scale-inputs .radio-label:nth-child(5):before { background-color: #90caf9; }
+        .scale-inputs .radio-label:nth-child(6):before { background-color: #bbdefb; }
+        .scale-inputs .radio-label:nth-child(7):before { background-color: #ffe0b2; }
+        .scale-inputs .radio-label:nth-child(8):before { background-color: #ffcc80; }
+        .scale-inputs .radio-label:nth-child(9):before { background-color: #ffb74d; }
+        .scale-inputs .radio-label:nth-child(10):before { background-color: #ffa726; }
+        .scale-inputs .radio-label:nth-child(11):before { background-color: #ff9800; }
+        
         .btn-submit {
             background-color: #3498db;
             color: white;
@@ -136,6 +162,7 @@
 </head>
 <body>
     <div class="container">
+        <!-- camabia el titulo aqui -->
         <h1>Evaluación de Atención al Cliente</h1>
         
         <form id="customerServiceForm" action="https://hook.us2.make.com/8ktur2qp2ba7idhco5gq2ssqpeq3eet9" method="POST">
@@ -259,8 +286,10 @@
                 <canvas id="employeeTimeChart"></canvas>
             </div>
             
+            <!-- AGREGAR CONEXIÓN A BASE DE DATOS AQUÍ -->
+            
             <!-- Botón de envío -->
-            <button type="submit" class="btn-submit">Analizar Resultados</button>
+            <button type="button" class="btn-submit" onclick="processForm()">Analizar Resultados</button>
         </form>
     </div>
     
@@ -325,6 +354,12 @@
         let employeeTimeChart;
         let animationId;
         
+        // Definir colores consistentes para usar en todos los gráficos
+        const actualColor = 'rgba(25, 118, 210, 0.7)'; // Azul
+        const actualBorderColor = 'rgb(25, 118, 210)';
+        const autoColor = 'rgba(255, 152, 0, 0.7)';    // Naranja
+        const autoBorderColor = 'rgb(255, 152, 0)';
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Inicializar el gráfico de empleados vs tiempo
             createEmployeeTimeChart();
@@ -358,8 +393,8 @@
                         {
                             label: 'Horas semanales por empleado',
                             data: [0],
-                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: actualColor,
+                            borderColor: actualBorderColor,
                             borderWidth: 1
                         }
                     ]
@@ -430,8 +465,8 @@
                 employeeTimeChart.data.datasets.push({
                     label: 'Con Automatización (estimado)',
                     data: [hours * (1 - timeReductionPercent)],
-                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: autoColor,
+                    borderColor: autoBorderColor,
                     borderWidth: 1
                 });
             } else {
@@ -446,8 +481,8 @@
             const animateHighlight = () => {
                 alpha = Math.min(alpha + 0.02, 1);
                 
-                employeeTimeChart.data.datasets[0].backgroundColor = `rgba(54, 162, 235, ${0.3 + (alpha * 0.4)})`;
-                employeeTimeChart.data.datasets[1].backgroundColor = `rgba(75, 192, 192, ${0.3 + (alpha * 0.4)})`;
+                employeeTimeChart.data.datasets[0].backgroundColor = `rgba(25, 118, 210, ${0.3 + (alpha * 0.4)})`;
+                employeeTimeChart.data.datasets[1].backgroundColor = `rgba(255, 152, 0, ${0.3 + (alpha * 0.4)})`;
                 
                 employeeTimeChart.update('none');
                 
@@ -460,13 +495,188 @@
         }
         
         function processForm() {
-            // Esta función ya no es llamada directamente por el botón.
-            // La acción de envío ahora es manejada directamente por el formulario
-            // que envía los datos al webhook.
+            // Validar formulario
+            const form = document.getElementById('customerServiceForm');
+            if (!validateForm(form)) {
+                alert('Por favor completa todos los campos requeridos');
+                return;
+            }
+            
+            // Recopilar datos del formulario
+            const employees = parseInt(document.querySelector('input[name="question4"]').value);
+            const hoursPerWeek = parseFloat(document.querySelector('input[name="question7"]').value);
+            
+            // Obtener costo mensual de atención al cliente de la pregunta 2
+            let costRangeUSD;
+            const q2Value = document.querySelector('input[name="question2"]:checked').value;
+            
+            if (q2Value === 'menos200') {
+                costRangeUSD = 100; // Valor promedio de menos de 200
+            } else if (q2Value === 'entre200y500') {
+                costRangeUSD = 350; // Valor promedio entre 200 y 500
+            } else { // mas500
+                costRangeUSD = 750; // Valor promedio para más de 500
+            }
+            
+            // Convertir a pesos colombianos
+            const costRangeCOP = costRangeUSD * exchangeRate;
+            
+            // Calcular costo por hora
+            const hourlyRate = costRangeCOP / (hoursPerWeek * 4); // 4 semanas por mes
+            
+            // Calcular costos actuales
+            const currentMonthlyCost = costRangeCOP;
+            const currentMonthlyHours = hoursPerWeek * 4;
+            
+            // Calcular costos con automatización
+            const automatedMonthlyCost = currentMonthlyCost * (1 - costReductionPercent);
+            const automatedMonthlyHours = currentMonthlyHours * (1 - timeReductionPercent);
+            
+            // Calcular ahorros
+            const costSavings = currentMonthlyCost - automatedMonthlyCost;
+            const timeSavings = currentMonthlyHours - automatedMonthlyHours;
+            
+            // Calcular indicador de productividad (atenciones por hora)
+            const currentProductivity = 10; // Base hipotética de atenciones por hora
+            const automatedProductivity = currentProductivity / (1 - timeReductionPercent);
+            const productivityIncrease = ((automatedProductivity / currentProductivity) - 1) * 100;
+            
+            // Mostrar resultados en la tabla
+            document.getElementById('currentCost').textContent = formatCurrency(currentMonthlyCost);
+            document.getElementById('automatedCost').textContent = formatCurrency(automatedMonthlyCost);
+            document.getElementById('costSavings').textContent = formatCurrency(costSavings);
+            
+            document.getElementById('currentTime').textContent = currentMonthlyHours.toFixed(1);
+            document.getElementById('automatedTime').textContent = automatedMonthlyHours.toFixed(1);
+            document.getElementById('timeSavings').textContent = timeSavings.toFixed(1);
+            
+            document.getElementById('currentProductivity').textContent = currentProductivity.toFixed(0) + ' atenciones/hora';
+            document.getElementById('automatedProductivity').textContent = automatedProductivity.toFixed(0) + ' atenciones/hora';
+            document.getElementById('productivityIncrease').textContent = productivityIncrease.toFixed(0) + '%';
+            
+            // Mostrar la sección de resultados
+            document.getElementById('results').style.display = 'block';
+            
+            // Generar gráficos con animación
+            generateCostChart(currentMonthlyCost, automatedMonthlyCost);
+            generateTimeChart(currentMonthlyHours, automatedMonthlyHours);
+            
+            // Desplazarse a los resultados
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
-
-        // ... (resto del código de las gráficas y cálculos)
-
+        
+        function validateForm(form) {
+            const inputs = form.querySelectorAll('input[required], textarea[required]');
+            let valid = true;
+            
+            inputs.forEach(input => {
+                if (input.type === 'radio') {
+                    const name = input.name;
+                    if (!form.querySelector(`input[name="${name}"]:checked`)) {
+                        valid = false;
+                    }
+                } else {
+                    if (!input.value.trim()) {
+                        valid = false;
+                    }
+                }
+            });
+            
+            return valid;
+        }
+        
+        function formatCurrency(amount) {
+            return '$ ' + amount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+        
+        function generateCostChart(current, automated) {
+            const ctx = document.getElementById('costChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Costo Mensual Actual', 'Costo Mensual con Automatización'],
+                    datasets: [{
+                        label: 'Costo en Pesos Colombianos (COP)',
+                        data: [current, automated],
+                        backgroundColor: [
+                            actualColor,
+                            autoColor
+                        ],
+                        borderColor: [
+                            actualBorderColor,
+                            autoBorderColor
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Pesos Colombianos (COP)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function generateTimeChart(current, automated) {
+            const ctx = document.getElementById('timeChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tiempo Mensual Actual', 'Tiempo Mensual con Automatización'],
+                    datasets: [{
+                        label: 'Horas Mensuales',
+                        data: [current, automated],
+                        backgroundColor: [
+                            actualColor,
+                            autoColor
+                        ],
+                        borderColor: [
+                            actualBorderColor,
+                            autoBorderColor
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Horas Mensuales'
+                            }
+                        }
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>
