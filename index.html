@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Evaluación de Atención al Cliente</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .question {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .question-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        label {
+            display: block;
+            margin: 8px 0;
+        }
+        input[type="radio"] {
+            margin-right: 8px;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 100px;
+        }
+        input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100px;
+        }
+        .scale-container {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+        }
+        .scale-label {
+            width: 200px;
+        }
+        .scale-inputs {
+            display: flex;
+            justify-content: space-between;
+            flex-grow: 1;
+        }
+        .radio-label {
+            display: flex;
+            align-items: center; /* Modificado para alinear verticalmente */
+            cursor: pointer;
+            position: relative;
+            margin: 0 5px;
+        }
+        .radio-label input[type="radio"] {
+            margin-right: 4px; /* Espacio reducido */
+            opacity: 1; /* Hacemos visible el radio button */
+        }
+        .btn-submit {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            margin: 30px auto 0;
+            transition: background-color 0.3s;
+        }
+        .btn-submit:hover {
+            background-color: #2980b9;
+        }
+        .results {
+            margin-top: 40px;
+            display: none;
+        }
+        .chart-container {
+            margin-top: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .hint {
+            font-style: italic;
+            color: #777;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        #employeeTimeChart {
+            margin-top: 20px;
+            width: 100%;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Evaluación de Atención al Cliente</h1>
+        
+        <form id="customerServiceForm">
+            <!-- Pregunta 1 -->
+            <div class="question">
+                <div class="question-title">1. ¿Qué le cuesta más a tu empresa de los siguientes aspectos?</div>
+                <label>
+                    <input type="radio" name="question1" value="pqrs" required> Gestión de PQRs
+                </label>
+                <label>
+                    <input type="radio" name="question1" value="tiempo"> Tiempo invertido en responder a clientes
+                </label>
+                <label>
+                    <input type="radio" name="question1" value="oferta"> La necesidad de mejorar su oferta
+                </label>
+            </div>
+            
+            <!-- Pregunta 2 -->
+            <div class="question">
+                <div class="question-title">2. ¿Cuál es el costo mensual promedio que tu empresa invierte en la gestión de atención al cliente?</div>
+                <label>
+                    <input type="radio" name="question2" value="menos200" required> Menos de 200 dólares
+                </label>
+                <label>
+                    <input type="radio" name="question2" value="entre200y500"> Entre 200 y 500 dólares
+                </label>
+                <label>
+                    <input type="radio" name="question2" value="mas500"> Más de 500 dólares
+                </label>
+            </div>
+            
+            <!-- Pregunta 3 -->
+            <div class="question">
+                <div class="question-title">3. En tu experiencia, ¿cuál es el mayor desafío que enfrenta tu empresa en la gestión de la atención al cliente?</div>
+                <textarea name="question3" placeholder="Por ejemplo: Pérdida de clientes, Dificultad para fidelizar clientes, Baja tasa de recompra..." required></textarea>
+            </div>
+            
+            <!-- Pregunta 4 -->
+            <div class="question">
+                <div class="question-title">4. ¿Cuántos empleados o colaboradores tienes?</div>
+                <input type="number" name="question4" min="1" required>
+            </div>
+            
+            <!-- Pregunta 5 -->
+            <div class="question">
+                <div class="question-title">5. De los siguientes desafíos internos, califica del 0 al 10 cuánto representa un reto para tu empresa:</div>
+                
+                <div class="scale-container">
+                    <div class="scale-label">Desarrollo de producto</div>
+                    <div class="scale-inputs">
+                        <label class="radio-label"><input type="radio" name="question5_producto" value="0" required> 0</label>
+                        <label class="radio-label"><input type="radio" name="question5_producto" value="1"> 1</label>
+                        <label class="radio-label"><input type="radio" name="question5_producto" value="2"> 2</label>
+                        <label class="radio-label"><input type="radio" name="question5_producto" value="3"> 3</label>
+                        <label class="radio-label"><input type="radio" name="question5_producto" value="4"> 4</label>
+                        <label class="radio-label"><input type="radio" name="question5_producto" value="5"> 5</label>
+                        <label class="radio-label"><input type="radio" name="question5_producto" value="6"> 6</label>
+                        <label class="radio-label"><input type="radio" name="question5_producto" value="7"> 7</label>
+                        <label class="radio-label"><input type="radio" name="question5_producto" value="8"> 8</label>
+                        <label class="radio-label"><input type="radio" name="question5_producto" value="9"> 9</label>
+                        <label class="radio-label"><input type="radio" name="question5_producto" value="10"> 10</label>
+                    </div>
+                </div>
+                <div class="scale-container">
+                    <div class="scale-label">Gestión de compras</div>
+                    <div class="scale-inputs">
+                        <label class="radio-label"><input type="radio" name="question5_compras" value="0" required> 0</label>
+                        <label class="radio-label"><input type="radio" name="question5_compras" value="1"> 1</label>
+                        <label class="radio-label"><input type="radio" name="question5_compras" value="2"> 2</label>
+                        <label class="radio-label"><input type="radio" name="question5_compras" value="3"> 3</label>
+                        <label class="radio-label"><input type="radio" name="question5_compras" value="4"> 4</label>
+                        <label class="radio-label"><input type="radio" name="question5_compras" value="5"> 5</label>
+                        <label class="radio-label"><input type="radio" name="question5_compras" value="6"> 6</label>
+                        <label class="radio-label"><input type="radio" name="question5_compras" value="7"> 7</label>
+                        <label class="radio-label"><input type="radio" name="question5_compras" value="8"> 8</label>
+                        <label class="radio-label"><input type="radio" name="question5_compras" value="9"> 9</label>
+                        <label class="radio-label"><input type="radio" name="question5_compras" value="10"> 10</label>
+                    </div>
+                </div>
+                <div class="scale-container">
+                    <div class="scale-label">Gestión de inventarios</div>
+                    <div class="scale-inputs">
+                        <label class="radio-label"><input type="radio" name="question5_inventarios" value="0" required> 0</label>
+                        <label class="radio-label"><input type="radio" name="question5_inventarios" value="1"> 1</label>
+                        <label class="radio-label"><input type="radio" name="question5_inventarios" value="2"> 2</label>
+                        <label class="radio-label"><input type="radio" name="question5_inventarios" value="3"> 3</label>
+                        <label class="radio-label"><input type="radio" name="question5_inventarios" value="4"> 4</label>
+                        <label class="radio-label"><input type="radio" name="question5_inventarios" value="5"> 5</label>
+                        <label class="radio-label"><input type="radio" name="question5_inventarios" value="6"> 6</label>
+                        <label class="radio-label"><input type="radio" name="question5_inventarios" value="7"> 7</label>
+                        <label class="radio-label"><input type="radio" name="question5_inventarios" value="8"> 8</label>
+                        <label class="radio-label"><input type="radio" name="question5_inventarios" value="9"> 9</label>
+                        <label class="radio-label"><input type="radio" name="question5_inventarios" value="10"> 10</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pregunta 6 -->
+            <div class="question">
+                <div class="question-title">6. ¿Cuánto estaría dispuesta a invertir mensualmente para solucionar este desafío?</div>
+                <label>
+                    <input type="radio" name="question6" value="menos100" required> Menos de 100 dólares
+                </label>
+                <label>
+                    <input type="radio" name="question6" value="entre100y300"> Entre 100 y 300 dólares
+                </label>
+                <label>
+                    <input type="radio" name="question6" value="mas300"> Más de 300 dólares
+                </label>
+            </div>
+            
+            <!-- Pregunta 7 -->
+            <div class="question">
+                <div class="question-title">7. ¿Cuántas horas a la semana gasta en atender las solicitudes de sus clientes, ya sean ventas, solicitudes o quejas?</div>
+                <input type="number" name="question7" min="0" step="0.5" required>
+            </div>
+            
+            <!-- Gráfico animado de empleados vs tiempo -->
+            <div class="chart-container">
+                <h3>Relación entre Número de Empleados y Tiempo de Atención</h3>
+                <canvas id="employeeTimeChart"></canvas>
+            </div>
+            
+            <!-- Botón de envío -->
+            <button type="button" class="btn-submit" onclick="processForm()">Analizar Resultados</button>
+        </form>
+    </div>
+    
+    <!-- Resultados y gráficas -->
+    <div id="results" class="container results">
+        <h2>Análisis de Resultados</h2>
+        
+        <div class="chart-container">
+            <h3>Comparativo de Costos Actuales vs. Con Automatización</h3>
+            <canvas id="costChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Comparativo de Tiempo Invertido Actual vs. Con Automatización</h3>
+            <canvas id="timeChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Resumen de Ahorro Potencial</h3>
+            <table id="savingsTable">
+                <thead>
+                    <tr>
+                        <th>Concepto</th>
+                        <th>Situación Actual</th>
+                        <th>Con Automatización</th>
+                        <th>Ahorro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Costo Mensual (COP)</td>
+                        <td id="currentCost">-</td>
+                        <td id="automatedCost">-</td>
+                        <td id="costSavings">-</td>
+                    </tr>
+                    <tr>
+                        <td>Tiempo Semanal (Horas)</td>
+                        <td id="currentTime">-</td>
+                        <td id="automatedTime">-</td>
+                        <td id="timeSavings">-</td>
+                    </tr>
+                    <tr>
+                        <td>Productividad Mensual</td>
+                        <td id="currentProductivity">-</td>
+                        <td id="automatedProductivity">-</td>
+                        <td id="productivityIncrease">-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        // Tasa de cambio USD a COP (ajustar según tasa actual)
+        const exchangeRate = 4000;
+        
+        // Reducción estimada con automatización (porcentajes)
+        const timeReductionPercent = 0.65; // 65% de reducción de tiempo
+        const costReductionPercent = 0.55; // 55% de reducción de costos
+        
+        // Variables para el gráfico animado
+        let employeeTimeChart;
+        let animationId;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar el gráfico de empleados vs tiempo
+            createEmployeeTimeChart();
+            
+            // Configurar eventos para actualizar el gráfico en tiempo real
+            const employeesInput = document.querySelector('input[name="question4"]');
+            const hoursInput = document.querySelector('input[name="question7"]');
+            
+            employeesInput.addEventListener('input', updateChartOnInput);
+            hoursInput.addEventListener('input', updateChartOnInput);
+            
+            function updateChartOnInput() {
+                const employees = parseInt(employeesInput.value) || 0;
+                const hours = parseFloat(hoursInput.value) || 0;
+                
+                if (employees > 0 && hours > 0) {
+                    updateEmployeeTimeBarChart(employees, hours);
+                }
+            }
+        });
+        
+        function createEmployeeTimeChart() {
+            const ctx = document.getElementById('employeeTimeChart').getContext('2d');
+            
+            // Configuración inicial del gráfico de barras
+            employeeTimeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Relación Empleados-Tiempo'],
+                    datasets: [
+                        {
+                            label: 'Horas semanales por empleado',
+                            data: [0],
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgb(54, 162, 235)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Horas semanales de atención'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Datos ingresados'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Horas semanales de atención por empleado',
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Empleados: ${context.raw.x}, Horas: ${context.raw.y}`;
+                                }
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateEmployeeTimeBarChart(employees, hours) {
+            // Cancelar cualquier animación en curso
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            // Actualizar datos
+            employeeTimeChart.data.labels = [`${employees} Empleados`];
+            employeeTimeChart.data.datasets[0].data = [hours];
+            
+            // Actualizar descripción
+            employeeTimeChart.options.plugins.title.text = `${hours} horas/semana con ${employees} empleados`;
+            
+            // Configurar escala Y dinámica
+            employeeTimeChart.options.scales.y.max = Math.max(40, hours * 1.3);
+            
+            // Añadir un dataset para proyección con automatización
+            if (employeeTimeChart.data.datasets.length === 1) {
+                employeeTimeChart.data.datasets.push({
+                    label: 'Con Automatización (estimado)',
+                    data: [hours * (1 - timeReductionPercent)],
+                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 1
+                });
+            } else {
+                employeeTimeChart.data.datasets[1].data = [hours * (1 - timeReductionPercent)];
+            }
+            
+            // Aplicar animación al actualizar
+            employeeTimeChart.update('active');
+            
+            // Añadir animación adicional para resaltar cambios
+            let alpha = 0;
+            const animateHighlight = () => {
+                alpha = Math.min(alpha + 0.02, 1);
+                
+                employeeTimeChart.data.datasets[0].backgroundColor = `rgba(54, 162, 235, ${0.3 + (alpha * 0.4)})`;
+                employeeTimeChart.data.datasets[1].backgroundColor = `rgba(75, 192, 192, ${0.3 + (alpha * 0.4)})`;
+                
+                employeeTimeChart.update('none');
+                
+                if (alpha < 1) {
+                    animationId = requestAnimationFrame(animateHighlight);
+                }
+            };
+            
+            animateHighlight();
+        }
+        
+        function processForm() {
+            // Validar formulario
+            const form = document.getElementById('customerServiceForm');
+            if (!validateForm(form)) {
+                alert('Por favor completa todos los campos requeridos');
+                return;
+            }
+            
+            // Recopilar datos del formulario
+            const employees = parseInt(document.querySelector('input[name="question4"]').value);
+            const hoursPerWeek = parseFloat(document.querySelector('input[name="question7"]').value);
+            
+            // Obtener costo mensual de atención al cliente de la pregunta 2
+            let costRangeUSD;
+            const q2Value = document.querySelector('input[name="question2"]:checked').value;
+            
+            if (q2Value === 'menos200') {
+                costRangeUSD = 100; // Valor promedio de menos de 200
+            } else if (q2Value === 'entre200y500') {
+                costRangeUSD = 350; // Valor promedio entre 200 y 500
+            } else { // mas500
+                costRangeUSD = 750; // Valor promedio para más de 500
+            }
+            
+            // Convertir a pesos colombianos
+            const costRangeCOP = costRangeUSD * exchangeRate;
+            
+            // Calcular costo por hora
+            const hourlyRate = costRangeCOP / (hoursPerWeek * 4); // 4 semanas por mes
+            
+            // Calcular costos actuales
+            const currentMonthlyCost = costRangeCOP;
+            const currentMonthlyHours = hoursPerWeek * 4;
+            
+            // Calcular costos con automatización
+            const automatedMonthlyCost = currentMonthlyCost * (1 - costReductionPercent);
+            const automatedMonthlyHours = currentMonthlyHours * (1 - timeReductionPercent);
+            
+            // Calcular ahorros
+            const costSavings = currentMonthlyCost - automatedMonthlyCost;
+            const timeSavings = currentMonthlyHours - automatedMonthlyHours;
+            
+            // Calcular indicador de productividad (atenciones por hora)
+            const currentProductivity = 10; // Base hipotética de atenciones por hora
+            const automatedProductivity = currentProductivity / (1 - timeReductionPercent);
+            const productivityIncrease = ((automatedProductivity / currentProductivity) - 1) * 100;
+            
+            // Mostrar resultados en la tabla
+            document.getElementById('currentCost').textContent = formatCurrency(currentMonthlyCost);
+            document.getElementById('automatedCost').textContent = formatCurrency(automatedMonthlyCost);
+            document.getElementById('costSavings').textContent = formatCurrency(costSavings);
+            
+            document.getElementById('currentTime').textContent = currentMonthlyHours.toFixed(1);
+            document.getElementById('automatedTime').textContent = automatedMonthlyHours.toFixed(1);
+            document.getElementById('timeSavings').textContent = timeSavings.toFixed(1);
+            
+            document.getElementById('currentProductivity').textContent = currentProductivity.toFixed(0) + ' atenciones/hora';
+            document.getElementById('automatedProductivity').textContent = automatedProductivity.toFixed(0) + ' atenciones/hora';
+            document.getElementById('productivityIncrease').textContent = productivityIncrease.toFixed(0) + '%';
+            
+            // Mostrar la sección de resultados
+            document.getElementById('results').style.display = 'block';
+            
+            // Generar gráficos con animación
+            generateCostChart(currentMonthlyCost, automatedMonthlyCost);
+            generateTimeChart(currentMonthlyHours, automatedMonthlyHours);
+            
+            // Desplazarse a los resultados
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function validateForm(form) {
+            const inputs = form.querySelectorAll('input[required], textarea[required]');
+            let valid = true;
+            
+            inputs.forEach(input => {
+                if (input.type === 'radio') {
+                    const name = input.name;
+                    if (!form.querySelector(`input[name="${name}"]:checked`)) {
+                        valid = false;
+                    }
+                } else {
+                    if (!input.value.trim()) {
+                        valid = false;
+                    }
+                }
+            });
+            
+            return valid;
+        }
+        
+        function formatCurrency(amount) {
+            return '$ ' + amount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+        
+        function generateCostChart(current, automated) {
+            const ctx = document.getElementById('costChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Costo Mensual Actual', 'Costo Mensual con Automatización'],
+                    datasets: [{
+                        label: 'Costo en Pesos Colombianos (COP)',
+                        data: [current, automated],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(75, 192, 192, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgb(255, 99, 132)',
+                            'rgb(75, 192, 192)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Pesos Colombianos (COP)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return formatCurrency(context.raw);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function generateTimeChart(current, automated) {
+            const ctx = document.getElementById('timeChart').getContext('2d');
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tiempo Mensual Actual', 'Tiempo Mensual con Automatización'],
+                    datasets: [{
+                        label: 'Horas Mensuales',
+                        data: [current, automated],
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(75, 192, 192, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgb(54, 162, 235)',
+                            'rgb(75, 192, 192)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Horas Mensuales'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
