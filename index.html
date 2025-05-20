@@ -162,11 +162,9 @@
 </head>
 <body>
     <div class="container">
-        <!-- camabia el titulo aqui -->
         <h1>Evaluación de Atención al Cliente</h1>
         
-        <form id="customerServiceForm"> //action="https://hook.us2.make.com/8ktur2qp2ba7idhco5gq2ssqpeq3eet9" method="POST"//**
-            <!-- Pregunta 1 -->
+        <form id="customerServiceForm">
             <div class="question">
                 <div class="question-title">1. ¿Qué le cuesta más a tu empresa de los siguientes aspectos?</div>
                 <label>
@@ -180,7 +178,6 @@
                 </label>
             </div>
             
-            <!-- Pregunta 2 -->
             <div class="question">
                 <div class="question-title">2. ¿Cuál es el costo mensual promedio que tu empresa invierte en la gestión de atención al cliente?</div>
                 <label>
@@ -194,19 +191,16 @@
                 </label>
             </div>
             
-            <!-- Pregunta 3 -->
             <div class="question">
                 <div class="question-title">3. En tu experiencia, ¿cuál es el mayor desafío que enfrenta tu empresa en la gestión de la atención al cliente?</div>
                 <textarea name="question3" placeholder="Por ejemplo: Pérdida de clientes, Dificultad para fidelizar clientes, Baja tasa de recompra..." required></textarea>
             </div>
             
-            <!-- Pregunta 4 -->
             <div class="question">
                 <div class="question-title">4. ¿Cuántos empleados o colaboradores tienes?</div>
                 <input type="number" name="question4" min="1" required>
             </div>
             
-            <!-- Pregunta 5 -->
             <div class="question">
                 <div class="question-title">5. De los siguientes desafíos internos, califica del 0 al 10 cuánto representa un reto para tu empresa:</div>
                 
@@ -260,7 +254,6 @@
                 </div>
             </div>
             
-            <!-- Pregunta 6 -->
             <div class="question">
                 <div class="question-title">6. ¿Cuánto estaría dispuesta a invertir mensualmente para solucionar este desafío?</div>
                 <label>
@@ -274,26 +267,20 @@
                 </label>
             </div>
             
-            <!-- Pregunta 7 -->
             <div class="question">
                 <div class="question-title">7. ¿Cuántas horas a la semana gasta en atender las solicitudes de sus clientes, ya sean ventas, solicitudes o quejas?</div>
                 <input type="number" name="question7" min="0" step="0.5" required>
             </div>
             
-            <!-- Gráfico animado de empleados vs tiempo -->
             <div class="chart-container">
                 <h3>Relación entre Número de Empleados y Tiempo de Atención</h3>
                 <canvas id="employeeTimeChart"></canvas>
             </div>
             
-            <!-- AGREGAR CONEXIÓN A BASE DE DATOS AQUÍ -->
-            
-            <!-- Botón de envío -->
             <button type="button" class="btn-submit" onclick="processForm()">Analizar Resultados</button>
         </form>
     </div>
     
-    <!-- Resultados y gráficas -->
     <div id="results" class="container results">
         <h2>Análisis de Resultados</h2>
         
@@ -494,54 +481,76 @@
             animateHighlight();
         }
         
-        function processForm() {
-            // Validar formulario
+        async function processForm() {
             const form = document.getElementById('customerServiceForm');
             if (!validateForm(form)) {
                 alert('Por favor completa todos los campos requeridos');
                 return;
             }
             
-            // Recopilar datos del formulario
+            // Collect form data
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+
+            // Send data to Make.com webhook
+            try {
+                const webhookUrl = 'https://hook.us2.make.com/8ktur2qp2ba7idhco5gq2ssqpeq3eet9'; // Your Make.com webhook URL
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                if (response.ok) {
+                    console.log('Form data sent successfully to Make.com');
+                } else {
+                    console.error('Failed to send form data to Make.com:', response.statusText);
+                    alert('Hubo un error al enviar tus datos. Por favor, inténtalo de nuevo.');
+                    return; // Stop execution if sending fails
+                }
+            } catch (error) {
+                console.error('Error sending form data:', error);
+                alert('Hubo un error de red al enviar tus datos. Por favor, verifica tu conexión e inténtalo de nuevo.');
+                return; // Stop execution if there's a network error
+            }
+
+            // Continue with chart analysis and display
             const employees = parseInt(document.querySelector('input[name="question4"]').value);
             const hoursPerWeek = parseFloat(document.querySelector('input[name="question7"]').value);
             
-            // Obtener costo mensual de atención al cliente de la pregunta 2
             let costRangeUSD;
             const q2Value = document.querySelector('input[name="question2"]:checked').value;
             
             if (q2Value === 'menos200') {
-                costRangeUSD = 100; // Valor promedio de menos de 200
+                costRangeUSD = 100;
             } else if (q2Value === 'entre200y500') {
-                costRangeUSD = 350; // Valor promedio entre 200 y 500
-            } else { // mas500
-                costRangeUSD = 750; // Valor promedio para más de 500
+                costRangeUSD = 350;
+            } else { 
+                costRangeUSD = 750;
             }
             
-            // Convertir a pesos colombianos
             const costRangeCOP = costRangeUSD * exchangeRate;
             
-            // Calcular costo por hora
-            const hourlyRate = costRangeCOP / (hoursPerWeek * 4); // 4 semanas por mes
+            const hourlyRate = costRangeCOP / (hoursPerWeek * 4); 
             
-            // Calcular costos actuales
             const currentMonthlyCost = costRangeCOP;
             const currentMonthlyHours = hoursPerWeek * 4;
             
-            // Calcular costos con automatización
             const automatedMonthlyCost = currentMonthlyCost * (1 - costReductionPercent);
             const automatedMonthlyHours = currentMonthlyHours * (1 - timeReductionPercent);
             
-            // Calcular ahorros
             const costSavings = currentMonthlyCost - automatedMonthlyCost;
             const timeSavings = currentMonthlyHours - automatedMonthlyHours;
             
-            // Calcular indicador de productividad (atenciones por hora)
-            const currentProductivity = 10; // Base hipotética de atenciones por hora
+            const currentProductivity = 10; 
             const automatedProductivity = currentProductivity / (1 - timeReductionPercent);
             const productivityIncrease = ((automatedProductivity / currentProductivity) - 1) * 100;
             
-            // Mostrar resultados en la tabla
             document.getElementById('currentCost').textContent = formatCurrency(currentMonthlyCost);
             document.getElementById('automatedCost').textContent = formatCurrency(automatedMonthlyCost);
             document.getElementById('costSavings').textContent = formatCurrency(costSavings);
@@ -554,14 +563,11 @@
             document.getElementById('automatedProductivity').textContent = automatedProductivity.toFixed(0) + ' atenciones/hora';
             document.getElementById('productivityIncrease').textContent = productivityIncrease.toFixed(0) + '%';
             
-            // Mostrar la sección de resultados
             document.getElementById('results').style.display = 'block';
             
-            // Generar gráficos con animación
             generateCostChart(currentMonthlyCost, automatedMonthlyCost);
             generateTimeChart(currentMonthlyHours, automatedMonthlyHours);
             
-            // Desplazarse a los resultados
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
         
